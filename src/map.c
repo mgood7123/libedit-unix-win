@@ -753,7 +753,11 @@ static const el_action_t el_map_vi_command[] = {
 	/* 115 */	VI_SUBSTITUTE_CHAR,	/* s */
 	/* 116 */	VI_TO_NEXT_CHAR,	/* t */
 	/* 117 */	VI_UNDO,		/* u */
-	/* 118 */	VI_HISTEDIT,		/* v */
+#if defined(_WIN32)
+	/* 118 */	ED_UNASSIGNED,		/* v */ // win32
+#else
+	/* 118 */	VI_HISTEDIT,		/* v */ // unix
+#endif
 	/* 119 */	VI_NEXT_WORD,		/* w */
 	/* 120 */	ED_DELETE_NEXT_CHAR,	/* x */
 	/* 121 */	VI_YANK,		/* y */

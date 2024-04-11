@@ -41,7 +41,9 @@ __RCSID("$NetBSD: filecomplete.c,v 1.73 2023/04/25 17:51:32 christos Exp $");
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#if !defined(_WIN32)
+#if defined(_WIN32)
+#include <userenv.h>
+#else
 #include <pwd.h>
 #endif
 #include <stdio.h>
@@ -57,7 +59,6 @@ static const wchar_t break_chars[] = L" \t\n\"\\'`@$><=;|&{(";
 /********************************/
 /* completion functions */
 
-#if !defined(_WIN32)
 /*
  * does tilde expansion of strings of type ``~user/foo''
  * if ``user'' isn't valid user name or ``txt'' doesn't start
@@ -68,11 +69,19 @@ static const wchar_t break_chars[] = L" \t\n\"\\'`@$><=;|&{(";
 char *
 fn_tilde_expand(const char *txt)
 {
+#if defined(_WIN32)
+#endif
+
 #if defined(HAVE_GETPW_R_POSIX) || defined(HAVE_GETPW_R_DRAFT)
 	struct passwd pwres;
 	char pwbuf[1024];
 #endif
+#if defined(_WIN32)
+	TCHAR home_dir[MAX_PATH] = { 0 };
+	DWORD home_dir_len = MAX_PATH;
+#else
 	struct passwd *pass;
+#endif
 	const char *pos;
 	char *temp;
 	size_t len = 0;
@@ -93,6 +102,7 @@ fn_tilde_expand(const char *txt)
 			return NULL;
 		(void)strlcpy(temp, txt + 1, len - 1);
 	}
+#if !defined(_WIN32)
 	if (temp[0] == 0) {
 #ifdef HAVE_GETPW_R_POSIX
 		if (getpwuid_r(getuid(), &pwres, pwbuf, sizeof(pwbuf),
@@ -101,9 +111,7 @@ fn_tilde_expand(const char *txt)
 #elif HAVE_GETPW_R_DRAFT
 		pass = getpwuid_r(getuid(), &pwres, pwbuf, sizeof(pwbuf));
 #else
-#if !defined(_WIN32)
 		pass = getpwuid(getuid());
-#endif
 #endif
 	} else {
 #ifdef HAVE_GETPW_R_POSIX
@@ -112,28 +120,44 @@ fn_tilde_expand(const char *txt)
 #elif HAVE_GETPW_R_DRAFT
 		pass = getpwnam_r(temp, &pwres, pwbuf, sizeof(pwbuf));
 #else
-#if !defined(_WIN32)
 		pass = getpwnam(temp);
 #endif
-#endif
 	}
+#endif
 	el_free(temp);		/* value no more needed */
+
+
+#if defined(_WIN32)
+	// https://nibuthomas.wordpress.com/tag/getuserprofiledirectory/
+
+	if (GetUserProfileDirectory(GetCurrentProcessToken(), home_dir, &home_dir_len) == FALSE) {
+		return NULL;
+	}
+#else
 	if (pass == NULL)
 		return strdup(txt);
+#endif
 
-	/* update pointer txt to point at string immedially following */
+	/* update pointer txt to point at string immediately following */
 	/* first slash */
 	txt += len;
 
+#if defined(_WIN32)
+	len = strlen(home_dir) + 1 + strlen(txt) + 1;
+	temp = el_calloc(len, sizeof(*temp));
+	if (temp == NULL)
+		return NULL;
+	(void)snprintf(temp, len, "%s/%s", home_dir, txt);
+#else
 	len = strlen(pass->pw_dir) + 1 + strlen(txt) + 1;
 	temp = el_calloc(len, sizeof(*temp));
 	if (temp == NULL)
 		return NULL;
 	(void)snprintf(temp, len, "%s/%s", pass->pw_dir, txt);
+#endif
 
 	return temp;
 }
-#endif
 
 static int
 needs_escaping(wchar_t c)
@@ -393,11 +417,9 @@ fn_filename_completion_function(const char *text, int state)
 				return NULL;
 			dirpath = strdup("./");
 		} else
-#if !defined(_WIN32)
 			if (*dirname == '~')
 				dirpath = fn_tilde_expand(dirname);
 		else
-#endif
 			dirpath = strdup(dirname);
 
 		if (dirpath == NULL)
@@ -453,11 +475,7 @@ static const char *
 append_char_function(const char *name)
 {
 	struct stat stbuf;
-	char *expname =
-#if !defined(_WIN32)
-		*name == '~' ? fn_tilde_expand(name) :
-#endif
-		NULL;
+	char *expname = *name == '~' ? fn_tilde_expand(name) : NULL;
 	const char *rs = " ";
 
 	if (stat(expname ? expname : name, &stbuf) == -1)
