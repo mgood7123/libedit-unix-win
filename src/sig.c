@@ -1,3 +1,4 @@
+#if !defined(_WIN32)
 /*	$NetBSD: sig.c,v 1.27 2023/02/03 19:47:38 christos Exp $	*/
 
 /*-
@@ -201,3 +202,4 @@ sig_clr(EditLine *el)
 
 	(void)sigprocmask(SIG_SETMASK, &oset, NULL);
 }
+#endif

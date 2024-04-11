@@ -134,7 +134,9 @@ struct editline {
 	el_keymacro_t	  el_keymacro;	/* Key binding stuff		*/
 	el_history_t	  el_history;	/* History stuff		*/
 	el_search_t	  el_search;	/* Search stuff			*/
+#if !defined(_WIN32)
 	el_signal_t	  el_signal;	/* Signal handling stuff	*/
+#endif
 	struct el_read_t *el_read;	/* Character reading stuff	*/
 	ct_buffer_t       el_visual;    /* Buffer for displayable str	*/
 	ct_buffer_t       el_scratch;   /* Scratch conversion buffer    */

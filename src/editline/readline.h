@@ -77,9 +77,11 @@ typedef KEYMAP_ENTRY *Keymap;
 #define control_character_bit		0x40
 
 #ifndef CTRL
+#if !defined(_WIN32)
 #include <sys/ioctl.h>
 #if !defined(__sun) && !defined(__hpux) && !defined(_AIX)
 #include <sys/ttydefaults.h>
+#endif
 #endif
 #ifndef CTRL
 #define CTRL(c)		((c) & 037)

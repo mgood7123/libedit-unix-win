@@ -47,20 +47,28 @@ __RCSID("$NetBSD: terminal.c,v 1.46 2023/02/04 14:34:28 christos Exp $");
  *	       termcap putchar routine does not take an argument!
  */
 #include <sys/types.h>
+#if !defined(_WIN32)
 #include <sys/ioctl.h>
+#endif
 #include <limits.h>
+#if !defined(_WIN32)
 #include <signal.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #ifdef HAVE_TERMCAP_H
 #include <termcap.h>
+#else
+#warning termcap not found
 #endif
 #ifdef HAVE_CURSES_H
 #include <curses.h>
 #elif HAVE_NCURSES_H
 #include <ncurses.h>
+#else
+#warning curses not found
 #endif
 
 /* Solaris's term.h does horrid things. */
@@ -233,8 +241,10 @@ static void
 terminal_setflags(EditLine *el)
 {
 	EL_FLAGS = 0;
+#if !defined(_WIN32)
 	if (el->el_tty.t_tabs)
 		EL_FLAGS |= (Val(T_pt) && !Val(T_xt)) ? TERM_CAN_TAB : 0;
+#endif
 
 	EL_FLAGS |= (Val(T_km) || Val(T_MT)) ? TERM_HAS_META : 0;
 	EL_FLAGS |= GoodStr(T_ce) ? TERM_CAN_CEOL : 0;
@@ -840,12 +850,16 @@ terminal_set(EditLine *el, const char *term)
 	char buf[TC_BUFSIZE];
 	char *area;
 	const struct termcapstr *t;
+#if !defined(_WIN32)
 	sigset_t oset, nset;
+#endif
 	int lins, cols;
 
+#if !defined(_WIN32)
 	(void) sigemptyset(&nset);
 	(void) sigaddset(&nset, SIGWINCH);
 	(void) sigprocmask(SIG_BLOCK, &nset, &oset);
+#endif
 
 	area = buf;
 
@@ -911,7 +925,9 @@ terminal_set(EditLine *el, const char *term)
 	(void) terminal_get_size(el, &lins, &cols);
 	if (terminal_change_size(el, lins, cols) == -1)
 		return -1;
+#if !defined(_WIN32)
 	(void) sigprocmask(SIG_SETMASK, &oset, NULL);
+#endif
 	terminal_bind_arrow(el);
 	el->el_terminal.t_name = term;
 	return i <= 0 ? -1 : 0;
@@ -1485,7 +1501,11 @@ terminal_echotc(EditLine *el, int argc __attribute__((__unused__)),
 	if (!*argv || *argv[0] == '\0')
 		return 0;
 	if (wcscmp(*argv, L"tabs") == 0) {
+#if defined(_WIN32)
+		(void)fprintf(el->el_outfile, fmts, EL_CAN_TAB ? "yes (unsupported on windows)" : "no (unsupported on windows)");
+#else
 		(void) fprintf(el->el_outfile, fmts, EL_CAN_TAB ? "yes" : "no");
+#endif
 		return 0;
 	} else if (wcscmp(*argv, L"meta") == 0) {
 		(void) fprintf(el->el_outfile, fmts, Val(T_km) ? "yes" : "no");
@@ -1499,7 +1519,11 @@ terminal_echotc(EditLine *el, int argc __attribute__((__unused__)),
 		    "yes" : "no");
 		return 0;
 	} else if (wcscmp(*argv, L"baud") == 0) {
+#if defined(_WIN32)
+		(void)fprintf(el->el_outfile, fmts, "0 (unsupported on windows)");
+#else
 		(void) fprintf(el->el_outfile, fmtd, (int)el->el_tty.t_speed);
+#endif
 		return 0;
 	} else if (wcscmp(*argv, L"rows") == 0 ||
                    wcscmp(*argv, L"lines") == 0) {

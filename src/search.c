@@ -632,7 +632,7 @@ cv_csearch(EditLine *el, int direction, wint_t ch, int count, int tflag)
 
 	el->el_line.cursor = cp;
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		if (direction > 0)
 			el->el_line.cursor++;
 		cv_delfini(el);

@@ -40,8 +40,15 @@
 #ifndef _h_el_tty
 #define	_h_el_tty
 
+#if defined(_WIN32)
+// dummy
+#define TCSADRAIN (1<<1)
+#endif
+
+#if !defined(_WIN32)
 #include <termios.h>
 #include <unistd.h>
+#endif
 
 /* Define our own since everyone gets it wrong! */
 #define	CONTROL(A)	((A) & 037)
@@ -469,10 +476,14 @@ libedit_private int	tty_get_signal_character(EditLine *, int);
 typedef struct {
     ttyperm_t t_t;
     ttychar_t t_c;
+#if defined(_WIN32)
+    ttychar_t t_o;
+#else
     struct termios t_or, t_ex, t_ed, t_ts;
     int t_tabs;
     int t_eight;
     speed_t t_speed;
+#endif
     unsigned char t_mode;
     unsigned char t_vdisable;
     unsigned char t_initialized;

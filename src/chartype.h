@@ -52,6 +52,9 @@
  * ref: ISO/IEC DTR 19769
  */
 #if WCHAR_MAX < INT32_MAX
+#if defined(_WIN32)
+#warning WINDOWS uses 16 bit wchar_t, UNIX uses 32 bit wchar_t
+#endif
 #warning Build environment does not support non-BMP characters
 #endif
 

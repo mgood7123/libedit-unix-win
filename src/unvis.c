@@ -42,8 +42,16 @@ __RCSID("$NetBSD: unvis.c,v 1.45 2022/04/19 20:32:15 rillig Exp $");
 
 #include <assert.h>
 #include <ctype.h>
+
+#if defined(_WIN32)
+#include <stdint.h>
+// unix defined u_char in linux/types.h
+// msys2 and windows do not define u_char
+typedef unsigned char		u_char;
+#else
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
 #endif
 #include <stdio.h>
 #include <errno.h>

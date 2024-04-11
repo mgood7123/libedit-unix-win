@@ -41,7 +41,9 @@ __RCSID("$NetBSD: filecomplete.c,v 1.73 2023/04/25 17:51:32 christos Exp $");
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#if !defined(_WIN32)
 #include <pwd.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +57,7 @@ static const wchar_t break_chars[] = L" \t\n\"\\'`@$><=;|&{(";
 /********************************/
 /* completion functions */
 
+#if !defined(_WIN32)
 /*
  * does tilde expansion of strings of type ``~user/foo''
  * if ``user'' isn't valid user name or ``txt'' doesn't start
@@ -98,7 +101,9 @@ fn_tilde_expand(const char *txt)
 #elif HAVE_GETPW_R_DRAFT
 		pass = getpwuid_r(getuid(), &pwres, pwbuf, sizeof(pwbuf));
 #else
+#if !defined(_WIN32)
 		pass = getpwuid(getuid());
+#endif
 #endif
 	} else {
 #ifdef HAVE_GETPW_R_POSIX
@@ -107,7 +112,9 @@ fn_tilde_expand(const char *txt)
 #elif HAVE_GETPW_R_DRAFT
 		pass = getpwnam_r(temp, &pwres, pwbuf, sizeof(pwbuf));
 #else
+#if !defined(_WIN32)
 		pass = getpwnam(temp);
+#endif
 #endif
 	}
 	el_free(temp);		/* value no more needed */
@@ -126,6 +133,7 @@ fn_tilde_expand(const char *txt)
 
 	return temp;
 }
+#endif
 
 static int
 needs_escaping(wchar_t c)
@@ -384,9 +392,12 @@ fn_filename_completion_function(const char *text, int state)
 			if ((dirname = strdup("")) == NULL)
 				return NULL;
 			dirpath = strdup("./");
-		} else if (*dirname == '~')
-			dirpath = fn_tilde_expand(dirname);
+		} else
+#if !defined(_WIN32)
+			if (*dirname == '~')
+				dirpath = fn_tilde_expand(dirname);
 		else
+#endif
 			dirpath = strdup(dirname);
 
 		if (dirpath == NULL)
@@ -442,7 +453,11 @@ static const char *
 append_char_function(const char *name)
 {
 	struct stat stbuf;
-	char *expname = *name == '~' ? fn_tilde_expand(name) : NULL;
+	char *expname =
+#if !defined(_WIN32)
+		*name == '~' ? fn_tilde_expand(name) :
+#endif
+		NULL;
 	const char *rs = " ";
 
 	if (stat(expname ? expname : name, &stbuf) == -1)

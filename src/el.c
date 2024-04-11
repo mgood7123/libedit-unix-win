@@ -51,7 +51,9 @@ __RCSID("$NetBSD: el.c,v 1.101 2022/10/30 19:11:31 christos Exp $");
 #include <sys/types.h>
 #include <sys/param.h>
 #include <ctype.h>
+#if !defined(_WIN32)
 #include <langinfo.h>
+#endif
 #include <locale.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -135,7 +137,9 @@ el_init_internal(const char *prog, FILE *fin, FILE *fout, FILE *ferr,
 	(void) search_init(el);
 	(void) hist_init(el);
 	(void) prompt_init(el);
+#if !defined(_WIN32)
 	(void) sig_init(el);
+#endif
 	(void) literal_init(el);
 	if (read_init(el) == -1) {
 		el_end(el);
@@ -166,14 +170,18 @@ el_end(EditLine *el)
 	terminal_end(el);
 	keymacro_end(el);
 	map_end(el);
+#if !defined(_WIN32)
 	if (!(el->el_flags & NO_TTY))
 		tty_end(el, TCSAFLUSH);
+#endif
 	ch_end(el);
 	read_end(el);
 	search_end(el);
 	hist_end(el);
 	prompt_end(el);
+#if !defined(_WIN32)
 	sig_end(el);
+#endif
 	literal_end(el);
 
 	el_free(el->el_prog);
@@ -252,12 +260,14 @@ el_wset(EditLine *el, int op, ...)
 		rv = map_set_editor(el, va_arg(ap, wchar_t *));
 		break;
 
+#if !defined(_WIN32)
 	case EL_SIGNAL:
 		if (va_arg(ap, int))
 			el->el_flags |= HANDLE_SIGNALS;
 		else
 			el->el_flags &= ~HANDLE_SIGNALS;
 		break;
+#endif
 
 	case EL_BIND:
 	case EL_TELLTC:
@@ -454,10 +464,12 @@ el_wget(EditLine *el, int op, ...)
 		rv = map_get_editor(el, va_arg(ap, const wchar_t **));
 		break;
 
+#if !defined(_WIN32)
 	case EL_SIGNAL:
 		*va_arg(ap, int *) = (el->el_flags & HANDLE_SIGNALS);
 		rv = 0;
 		break;
+#endif
 
 	case EL_EDITMODE:
 		*va_arg(ap, int *) = !(el->el_flags & EDIT_DISABLED);
@@ -624,17 +636,21 @@ void
 el_resize(EditLine *el)
 {
 	int lins, cols;
+#if !defined(_WIN32)
 	sigset_t oset, nset;
 
 	(void) sigemptyset(&nset);
 	(void) sigaddset(&nset, SIGWINCH);
 	(void) sigprocmask(SIG_BLOCK, &nset, &oset);
+#endif
 
 	/* get the correct window size */
 	if (terminal_get_size(el, &lins, &cols))
 		terminal_change_size(el, lins, cols);
 
+#if !defined(_WIN32)
 	(void) sigprocmask(SIG_SETMASK, &oset, NULL);
+#endif
 }
 
 

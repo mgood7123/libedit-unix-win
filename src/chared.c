@@ -291,7 +291,7 @@ cv_next_word(EditLine *el, wchar_t *p, wchar_t *high, int n,
 		 * vi historically deletes with cw only the word preserving the
 		 * trailing whitespace! This is not what 'w' does..
 		 */
-		if (n || el->el_chared.c_vcmd.action != (DELETE|INSERT))
+		if (n || el->el_chared.c_vcmd.action != (CHARED_DELETE|CHARED_INSERT))
 			while ((p < high) && iswspace(*p))
 				p++;
 	}
@@ -339,7 +339,7 @@ cv_delfini(EditLine *el)
 	int size;
 	int action = el->el_chared.c_vcmd.action;
 
-	if (action & INSERT)
+	if (action & CHARED_INSERT)
 		el->el_map.current = el->el_map.key;
 
 	if (el->el_chared.c_vcmd.pos == 0)
@@ -350,7 +350,7 @@ cv_delfini(EditLine *el)
 	if (size == 0)
 		size = 1;
 	el->el_line.cursor = el->el_chared.c_vcmd.pos;
-	if (action & YANK) {
+	if (action & CHARED_YANK) {
 		if (size > 0)
 			cv_yank(el, el->el_line.cursor, size);
 		else
@@ -364,7 +364,7 @@ cv_delfini(EditLine *el)
 			el->el_line.cursor += size;
 		}
 	}
-	el->el_chared.c_vcmd.action = NOP;
+	el->el_chared.c_vcmd.action = CHARED_NOP;
 }
 
 
@@ -419,7 +419,7 @@ ch_init(EditLine *el)
 	el->el_chared.c_redo.lim	= el->el_chared.c_redo.buf + EL_BUFSIZ;
 	el->el_chared.c_redo.cmd	= ED_UNASSIGNED;
 
-	el->el_chared.c_vcmd.action	= NOP;
+	el->el_chared.c_vcmd.action	= CHARED_NOP;
 	el->el_chared.c_vcmd.pos	= el->el_line.buffer;
 
 	el->el_chared.c_kill.buf	= el_calloc(EL_BUFSIZ,
@@ -459,7 +459,7 @@ ch_reset(EditLine *el)
 	el->el_chared.c_undo.len	= -1;
 	el->el_chared.c_undo.cursor	= 0;
 
-	el->el_chared.c_vcmd.action	= NOP;
+	el->el_chared.c_vcmd.action	= CHARED_NOP;
 	el->el_chared.c_vcmd.pos	= el->el_line.buffer;
 
 	el->el_chared.c_kill.mark	= el->el_line.buffer;

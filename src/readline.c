@@ -41,7 +41,11 @@ __RCSID("$NetBSD: readline.c,v 1.181 2023/04/25 17:51:32 christos Exp $");
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#if defined(_WIN32)
+#include <userenv.h>
+#else
 #include <pwd.h>
+#endif
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -185,7 +189,9 @@ static jmp_buf topbuf;
 
 /* internal functions */
 static unsigned char	 _el_rl_complete(EditLine *, int);
+#if !defined(_WIN32)
 static unsigned char	 _el_rl_tstp(EditLine *, int);
+#endif
 static char		*_get_prompt(EditLine *);
 static int		 _getc_function(EditLine *, wchar_t *);
 static int		 _history_expand_command(const char *, size_t, size_t,
@@ -232,24 +238,42 @@ _resize_fun(EditLine *el, void *a)
 	*ap = li->buffer;
 }
 
+
 static const char *
 _default_history_file(void)
 {
-	struct passwd *p;
 	static char *path;
-	size_t len;
 
 	if (path)
 		return path;
 
+#if defined(_WIN32)
+	// https://nibuthomas.wordpress.com/tag/getuserprofiledirectory/
+
+	TCHAR home_dir[MAX_PATH] = { 0 };
+	DWORD home_dir_len = MAX_PATH;
+	if (GetUserProfileDirectory(GetCurrentProcessToken(), home_dir, &home_dir_len) == FALSE) {
+		return NULL;
+	}
+
+	size_t len = strlen(home_dir) + sizeof("/.history");
+	if ((path = el_malloc(len)) == NULL)
+		return NULL;
+
+	(void)snprintf(path, len, "%s/.history", home_dir);
+#else
+	struct passwd *p;
+
+
 	if ((p = getpwuid(getuid())) == NULL)
 		return NULL;
 
-	len = strlen(p->pw_dir) + sizeof("/.history");
+	size_t len = strlen(p->pw_dir) + sizeof("/.history");
 	if ((path = el_malloc(len)) == NULL)
 		return NULL;
 
 	(void)snprintf(path, len, "%s/.history", p->pw_dir);
+#endif
 	return path;
 }
 
@@ -310,7 +334,11 @@ rl_initialize(void)
 {
 	HistEvent ev;
 	int editmode = 1;
+#if defined(_WIN32)
+	DWORD t = 0;
+#else
 	struct termios t;
+#endif
 
 	if (e != NULL)
 		el_end(e);
@@ -327,7 +355,11 @@ rl_initialize(void)
 	/*
 	 * See if we don't really want to run the editor
 	 */
+#if defined(_WIN32)
+	if (GetConsoleMode(GetStdHandle(rl_outstream == stdin ? STD_INPUT_HANDLE : STD_OUTPUT_HANDLE), &t) != -1 && (t & ENABLE_ECHO_INPUT) == 0)
+#else
 	if (tcgetattr(fileno(rl_instream), &t) != -1 && (t.c_lflag & ECHO) == 0)
+#endif
 		editmode = 0;
 
 	e = el_init_internal(rl_readline_name, rl_instream, rl_outstream,
@@ -360,7 +392,9 @@ rl_initialize(void)
 		return -1;
 	}
 	el_set(e, EL_PROMPT_ESC, _get_prompt, RL_PROMPT_START_IGNORE);
+#if !defined(_WIN32)
 	el_set(e, EL_SIGNAL, rl_catch_signals);
+#endif
 
 	/* set default mode to "emacs"-style and read setting afterwards */
 	/* so this can be overridden */
@@ -379,6 +413,7 @@ rl_initialize(void)
 	    _el_rl_complete);
 	el_set(e, EL_BIND, "^I", "rl_complete", NULL);
 
+#if !defined(_WIN32)
 	/*
 	 * Send TSTP when ^Z is pressed.
 	 */
@@ -386,6 +421,7 @@ rl_initialize(void)
 	    "ReadLine compatible suspend function",
 	    _el_rl_tstp);
 	el_set(e, EL_BIND, "^Z", "rl_tstp", NULL);
+#endif
 
 	/*
 	 * Set some readline compatible key-bindings.
@@ -1250,7 +1286,8 @@ stifle_history(int max)
 		while (history_length > max) {
 			he = remove_history(0);
 			el_free(he->data);
-			el_free((void *)(unsigned long)he->line);
+			// unix long is always 64 bits even on 32-bit
+			el_free((void *)(unsigned long long)he->line);
 			el_free(he);
 		}
 	}
@@ -1912,6 +1949,7 @@ username_completion_function(const char *text, int state)
 }
 
 
+#if !defined(_WIN32)
 /*
  * el-compatible wrapper to send TSTP on ^Z
  */
@@ -1919,9 +1957,13 @@ username_completion_function(const char *text, int state)
 static unsigned char
 _el_rl_tstp(EditLine *el __attribute__((__unused__)), int ch __attribute__((__unused__)))
 {
+	// TODO: msys2 and cygwin allow ^Z but do not implement kill()
+	// it appears that msys2 bash runs under CYGWIN and thus allows ^Z
+	// msys2 bash cannot ^Z suspend cmd.exe nor powershell.exe
 	(void)kill(0, SIGTSTP);
 	return CC_NORM;
 }
+#endif
 
 static const char *
 /*ARGSUSED*/
@@ -2264,7 +2306,17 @@ _rl_event_read_char(EditLine *el, wchar_t *wc)
 
 		(*rl_event_hook)();
 
+#if defined(_WIN32)
+		// TODO:
+		/* not non-blocking, but what you gonna do? */
+		num_read = read(el->el_infd, &ch, 1);
+		return -1;
+#else
 #if defined(FIONREAD)
+		// https://man.freebsd.org/cgi/man.cgi?ioctl(2)
+		// FIONREAD
+		//  Get the number of bytes that are immediately available for reading
+		//
 		if (ioctl(el->el_infd, FIONREAD, &n) < 0)
 			return -1;
 		if (n)
@@ -2283,6 +2335,7 @@ _rl_event_read_char(EditLine *el, wchar_t *wc)
 		/* not non-blocking, but what you gonna do? */
 		num_read = read(el->el_infd, &ch, 1);
 		return -1;
+#endif
 #endif
 
 		if (num_read < 0 && errno == EAGAIN)

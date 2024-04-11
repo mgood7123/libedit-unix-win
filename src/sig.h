@@ -40,6 +40,8 @@
 #ifndef _h_el_sig
 #define	_h_el_sig
 
+#if !defined(_WIN32)
+
 #include <signal.h>
 
 /*
@@ -66,5 +68,7 @@ libedit_private void	sig_end(EditLine*);
 libedit_private int	sig_init(EditLine*);
 libedit_private void	sig_set(EditLine*);
 libedit_private void	sig_clr(EditLine*);
+
+#endif
 
 #endif /* _h_el_sig */

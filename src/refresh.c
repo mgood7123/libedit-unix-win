@@ -48,6 +48,10 @@ __RCSID("$NetBSD: refresh.c,v 1.58 2021/09/09 20:24:07 christos Exp $");
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#if defined(_WIN32)
+#include <wcwidth.h>
+#endif
+
 
 #include "el.h"
 

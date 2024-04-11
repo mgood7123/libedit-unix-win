@@ -217,7 +217,7 @@ ed_move_to_end(EditLine *el, wint_t c __attribute__((__unused__)))
 
 	el->el_line.cursor = el->el_line.lastchar;
 	if (el->el_map.type == MAP_VI) {
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -244,7 +244,7 @@ ed_move_to_beg(EditLine *el, wint_t c __attribute__((__unused__)))
 			/* We want FIRST non space character */
 		while (iswspace(*el->el_line.cursor))
 			el->el_line.cursor++;
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -291,7 +291,7 @@ ed_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
 	if (el->el_line.cursor >= lim ||
 	    (el->el_line.cursor == lim - 1 &&
 	    el->el_map.type == MAP_VI &&
-	    el->el_chared.c_vcmd.action == NOP))
+	    el->el_chared.c_vcmd.action == CHARED_NOP))
 		return CC_ERROR;
 
 	el->el_line.cursor += el->el_state.argument;
@@ -299,7 +299,7 @@ ed_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
 		el->el_line.cursor = lim;
 
 	if (el->el_map.type == MAP_VI)
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -325,7 +325,7 @@ ed_prev_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    ce__isword);
 
 	if (el->el_map.type == MAP_VI)
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -348,7 +348,7 @@ ed_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
 			el->el_line.cursor = el->el_line.buffer;
 
 		if (el->el_map.type == MAP_VI)
-			if (el->el_chared.c_vcmd.action != NOP) {
+			if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 				cv_delfini(el);
 				return CC_REFRESH;
 			}
@@ -627,7 +627,7 @@ ed_search_prev_history(EditLine *el, wint_t c __attribute__((__unused__)))
 	int h;
 	int found = 0;
 
-	el->el_chared.c_vcmd.action = NOP;
+	el->el_chared.c_vcmd.action = CHARED_NOP;
 	el->el_chared.c_undo.len = -1;
 	*el->el_line.lastchar = '\0';	/* just in case */
 	if (el->el_history.eventno < 0) {
@@ -695,7 +695,7 @@ ed_search_next_history(EditLine *el, wint_t c __attribute__((__unused__)))
 	int h;
 	int found = 0;
 
-	el->el_chared.c_vcmd.action = NOP;
+	el->el_chared.c_vcmd.action = CHARED_NOP;
 	el->el_chared.c_undo.len = -1;
 	*el->el_line.lastchar = '\0';	/* just in case */
 

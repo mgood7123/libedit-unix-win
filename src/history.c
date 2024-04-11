@@ -57,6 +57,15 @@ static const char hist_cookie[] = "_HiStOrY_V2_\n";
 
 #include "histedit.h"
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#include <io.h>
+#include <fileapi.h>
+#include <errno.h>
+#include <sys/stat.h>
+#endif
 
 #ifdef NARROWCHAR
 
@@ -828,6 +837,51 @@ done:
 	(void) fclose(fp);
 	return i;
 }
+
+#if defined(_WIN32)
+
+int fchmod(int fd, int mode) {
+	TCHAR path[MAX_PATH] = { 0 };
+
+	// Never call CloseHandle on the return value of this function.
+	// The underlying OS file handle is owned by the fd.
+	//
+	HANDLE handle = (HANDLE)_get_osfhandle(fd);
+	if (handle == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+	DWORD res = GetFinalPathNameByHandle(handle, path, MAX_PATH, 0);
+	if (res == 0) {
+		int l = GetLastError();
+		if (l == ERROR_PATH_NOT_FOUND) {
+			errno = EBADF;
+			return -1;
+		}
+		if (l == ERROR_NOT_ENOUGH_MEMORY) {
+			errno = ENOMEM;
+			return -1;
+		}
+		return -1;
+	}
+	if (res >= MAX_PATH) {
+		return -1;
+	}
+	int chmod_mode = 0;
+	if ((mode & S_IRUSR) == S_IRUSR) {
+		chmod_mode |= _S_IREAD;
+	}
+	if ((mode & S_IWUSR) == S_IWUSR) {
+		chmod_mode |= _S_IWRITE;
+	}
+#if UNICODE
+	return _wchmod(path, chmod_mode);
+#else
+	return _chmod(path, chmod_mode);
+#endif
+}
+
+#endif
 
 
 /* history_save_fp():

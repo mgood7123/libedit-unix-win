@@ -44,7 +44,9 @@ __RCSID("$NetBSD: vi.c,v 1.64 2021/08/28 17:17:47 christos Exp $");
 /*
  * vi.c: Vi mode commands.
  */
+#if !defined(_WIN32)
 #include <sys/wait.h>
+#endif
 #include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -67,22 +69,22 @@ static el_action_t
 cv_action(EditLine *el, wint_t c)
 {
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		/* 'cc', 'dd' and (possibly) friends */
 		if (c != (wint_t)el->el_chared.c_vcmd.action)
 			return CC_ERROR;
 
-		if (!(c & YANK))
+		if (!(c & CHARED_YANK))
 			cv_undo(el);
 		cv_yank(el, el->el_line.buffer,
 		    (int)(el->el_line.lastchar - el->el_line.buffer));
-		el->el_chared.c_vcmd.action = NOP;
+		el->el_chared.c_vcmd.action = CHARED_NOP;
 		el->el_chared.c_vcmd.pos = 0;
-		if (!(c & YANK)) {
+		if (!(c & CHARED_YANK)) {
 			el->el_line.lastchar = el->el_line.buffer;
 			el->el_line.cursor = el->el_line.buffer;
 		}
-		if (c & INSERT)
+		if (c & CHARED_INSERT)
 			el->el_map.current = el->el_map.key;
 
 		return CC_REFRESH;
@@ -166,7 +168,7 @@ vi_prev_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    el->el_state.argument,
 	    cv__isWord);
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		cv_delfini(el);
 		return CC_REFRESH;
 	}
@@ -191,7 +193,7 @@ vi_prev_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    el->el_state.argument,
 	    cv__isword);
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		cv_delfini(el);
 		return CC_REFRESH;
 	}
@@ -215,7 +217,7 @@ vi_next_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    el->el_line.lastchar, el->el_state.argument, cv__isWord);
 
 	if (el->el_map.type == MAP_VI)
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -239,7 +241,7 @@ vi_next_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    el->el_line.lastchar, el->el_state.argument, cv__isword);
 
 	if (el->el_map.type == MAP_VI)
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
@@ -291,7 +293,7 @@ vi_change_meta(EditLine *el, wint_t c __attribute__((__unused__)))
          * Delete with insert == change: first we delete and then we leave in
          * insert mode.
          */
-	return cv_action(el, DELETE | INSERT);
+	return cv_action(el, CHARED_DELETE | CHARED_INSERT);
 }
 
 
@@ -462,7 +464,7 @@ libedit_private el_action_t
 vi_delete_meta(EditLine *el, wint_t c __attribute__((__unused__)))
 {
 
-	return cv_action(el, DELETE);
+	return cv_action(el, CHARED_DELETE);
 }
 
 
@@ -481,7 +483,7 @@ vi_end_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	el->el_line.cursor = cv__endword(el->el_line.cursor,
 	    el->el_line.lastchar, el->el_state.argument, cv__isWord);
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		el->el_line.cursor++;
 		cv_delfini(el);
 		return CC_REFRESH;
@@ -505,7 +507,7 @@ vi_end_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	el->el_line.cursor = cv__endword(el->el_line.cursor,
 	    el->el_line.lastchar, el->el_state.argument, cv__isword);
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		el->el_line.cursor++;
 		cv_delfini(el);
 		return CC_REFRESH;
@@ -551,7 +553,7 @@ vi_command_mode(EditLine *el, wint_t c __attribute__((__unused__)))
 {
 
 	/* [Esc] cancels pending action */
-	el->el_chared.c_vcmd.action = NOP;
+	el->el_chared.c_vcmd.action = CHARED_NOP;
 	el->el_chared.c_vcmd.pos = 0;
 
 	el->el_state.doingarg = 0;
@@ -578,7 +580,7 @@ vi_zero(EditLine *el, wint_t c)
 		return ed_argument_digit(el, c);
 
 	el->el_line.cursor = el->el_line.buffer;
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		cv_delfini(el);
 		return CC_REFRESH;
 	}
@@ -838,7 +840,7 @@ vi_match(EditLine *el, wint_t c __attribute__((__unused__)))
 
 	el->el_line.cursor = cp;
 
-	if (el->el_chared.c_vcmd.action != NOP) {
+	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		/* NB posix says char under cursor should NOT be deleted
 		   for -ve delta - this is different to netbsd vi. */
 		if (delta > 0)
@@ -900,7 +902,7 @@ libedit_private el_action_t
 vi_yank(EditLine *el, wint_t c __attribute__((__unused__)))
 {
 
-	return cv_action(el, YANK);
+	return cv_action(el, CHARED_YANK);
 }
 
 /* vi_comment_out():
@@ -992,6 +994,7 @@ vi_to_history_line(EditLine *el, wint_t c __attribute__((__unused__)))
 	return rval;
 }
 
+#if !defined(_WIN32)
 /* vi_histedit():
  *	Vi edit history line with vi
  *	[v]
@@ -1076,6 +1079,7 @@ error:
 	unlink(tempfile);
 	return CC_ERROR;
 }
+#endif
 
 /* vi_history_word():
  *	Vi append word from previous input line

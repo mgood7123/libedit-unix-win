@@ -285,10 +285,13 @@ read_char(EditLine *el, wchar_t *cp)
 	size_t cbp = 0;
 	int save_errno = errno;
 
- again:
+again:
+#if !defined(_WIN32)
 	el->el_signal->sig_no = 0;
+#endif
 	while ((num_read = read(el->el_infd, cbuf + cbp, (size_t)1)) == -1) {
 		int e = errno;
+#if !defined(_WIN32)
 		switch (el->el_signal->sig_no) {
 		case SIGCONT:
 			el_wset(el, EL_REFRESH);
@@ -299,6 +302,7 @@ read_char(EditLine *el, wchar_t *cp)
 		default:
 			break;
 		}
+#endif
 		if (!tried && read__fixio(el->el_infd, e) == 0) {
 			errno = save_errno;
 			tried = 1;
@@ -422,8 +426,10 @@ el_wgetc(EditLine *el, wchar_t *cp)
 libedit_private void
 read_prepare(EditLine *el)
 {
+#if !defined(_WIN32)
 	if (el->el_flags & HANDLE_SIGNALS)
 		sig_set(el);
+#endif
 	if (el->el_flags & NO_TTY)
 		return;
 	if ((el->el_flags & (UNBUFFERED|EDIT_DISABLED)) == UNBUFFERED)
@@ -445,8 +451,10 @@ read_finish(EditLine *el)
 {
 	if ((el->el_flags & UNBUFFERED) == 0)
 		(void) tty_cookedmode(el);
+#if !defined(_WIN32)
 	if (el->el_flags & HANDLE_SIGNALS)
 		sig_clr(el);
+#endif
 }
 
 static const wchar_t *
@@ -599,7 +607,7 @@ el_wgets(EditLine *el, int *nread)
 		}
 		el->el_state.argument = 1;
 		el->el_state.doingarg = 0;
-		el->el_chared.c_vcmd.action = NOP;
+		el->el_chared.c_vcmd.action = CHARED_NOP;
 		if (el->el_flags & UNBUFFERED)
 			break;
 	}

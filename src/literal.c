@@ -43,6 +43,9 @@ __RCSID("$NetBSD: literal.c,v 1.5 2019/07/23 13:10:11 christos Exp $");
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(_WIN32)
+#include <wcwidth.h>
+#endif
 #include "el.h"
 
 libedit_private void

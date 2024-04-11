@@ -68,6 +68,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/types.h>
 
 #include <stdint.h>
+#if defined(_WIN32)
+// unix defined u_char in linux/types.h
+// msys2 and windows do not define u_char
+typedef unsigned char		u_char;
+#endif
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>

@@ -272,7 +272,7 @@ em_next_word(EditLine *el, wint_t c __attribute__((__unused__)))
 	    ce__isword);
 
 	if (el->el_map.type == MAP_VI)
-		if (el->el_chared.c_vcmd.action != NOP) {
+		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 			cv_delfini(el);
 			return CC_REFRESH;
 		}
