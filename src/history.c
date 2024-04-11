@@ -840,7 +840,7 @@ done:
 
 #if defined(_WIN32)
 
-int fchmod(int fd, int mode) {
+static int fchmod(int fd, int mode) {
 	TCHAR path[MAX_PATH] = { 0 };
 
 	// Never call CloseHandle on the return value of this function.

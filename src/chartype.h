@@ -53,9 +53,10 @@
  */
 #if WCHAR_MAX < INT32_MAX
 #if defined(_WIN32)
-#warning WINDOWS uses 16 bit wchar_t, UNIX uses 32 bit wchar_t
-#endif
+#warning WINDOWS uses 16 bit wchar_t but UNIX uses 32 bit wchar_t
+#else
 #warning Build environment does not support non-BMP characters
+#endif
 #endif
 
 /*
