@@ -59,14 +59,14 @@ __RCSID("$NetBSD: vi.c,v 1.64 2021/08/28 17:17:47 christos Exp $");
 #include "fcns.h"
 #include "vi.h"
 
-static el_action_t	cv_action(EditLine *, wint_t);
-static el_action_t	cv_paste(EditLine *, wint_t);
+static el_action_t	cv_action(EditLine*, wint_t);
+static el_action_t	cv_paste(EditLine*, wint_t);
 
 /* cv_action():
  *	Handle vi actions.
  */
 static el_action_t
-cv_action(EditLine *el, wint_t c)
+cv_action(EditLine* el, wint_t c)
 {
 
 	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
@@ -77,7 +77,7 @@ cv_action(EditLine *el, wint_t c)
 		if (!(c & CHARED_YANK))
 			cv_undo(el);
 		cv_yank(el, el->el_line.buffer,
-		    (int)(el->el_line.lastchar - el->el_line.buffer));
+			(int)(el->el_line.lastchar - el->el_line.buffer));
 		el->el_chared.c_vcmd.action = CHARED_NOP;
 		el->el_chared.c_vcmd.pos = 0;
 		if (!(c & CHARED_YANK)) {
@@ -98,16 +98,16 @@ cv_action(EditLine *el, wint_t c)
  *	Paste previous deletion before or after the cursor
  */
 static el_action_t
-cv_paste(EditLine *el, wint_t c)
+cv_paste(EditLine* el, wint_t c)
 {
-	c_kill_t *k = &el->el_chared.c_kill;
+	c_kill_t* k = &el->el_chared.c_kill;
 	size_t len = (size_t)(k->last - k->buf);
 
 	if (k->buf == NULL || len == 0)
 		return CC_ERROR;
 #ifdef DEBUG_PASTE
 	(void) fprintf(el->el_errfile, "Paste: \"%.*ls\"\n", (int)len,
-	    k->buf);
+		k->buf);
 #endif
 
 	cv_undo(el);
@@ -118,8 +118,8 @@ cv_paste(EditLine *el, wint_t c)
 	c_insert(el, (int)len);
 	if (el->el_line.cursor + len > el->el_line.lastchar)
 		return CC_ERROR;
-	(void) memcpy(el->el_line.cursor, k->buf, len *
-	    sizeof(*el->el_line.cursor));
+	(void)memcpy(el->el_line.cursor, k->buf, len *
+		sizeof(*el->el_line.cursor));
 
 	return CC_REFRESH;
 }
@@ -131,7 +131,7 @@ cv_paste(EditLine *el, wint_t c)
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_paste_next(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_paste_next(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_paste(el, 0);
@@ -144,7 +144,7 @@ vi_paste_next(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_paste_prev(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_paste_prev(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_paste(el, 1);
@@ -157,16 +157,16 @@ vi_paste_prev(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_prev_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_prev_big_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor == el->el_line.buffer)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv_prev_word(el->el_line.cursor,
-	    el->el_line.buffer,
-	    el->el_state.argument,
-	    cv__isWord);
+		el->el_line.buffer,
+		el->el_state.argument,
+		cv__isWord);
 
 	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		cv_delfini(el);
@@ -182,16 +182,16 @@ vi_prev_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_prev_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_prev_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor == el->el_line.buffer)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv_prev_word(el->el_line.cursor,
-	    el->el_line.buffer,
-	    el->el_state.argument,
-	    cv__isword);
+		el->el_line.buffer,
+		el->el_state.argument,
+		cv__isword);
 
 	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		cv_delfini(el);
@@ -207,14 +207,14 @@ vi_prev_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_next_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_next_big_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor >= el->el_line.lastchar - 1)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv_next_word(el, el->el_line.cursor,
-	    el->el_line.lastchar, el->el_state.argument, cv__isWord);
+		el->el_line.lastchar, el->el_state.argument, cv__isWord);
 
 	if (el->el_map.type == MAP_VI)
 		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
@@ -231,14 +231,14 @@ vi_next_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_next_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_next_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor >= el->el_line.lastchar - 1)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv_next_word(el, el->el_line.cursor,
-	    el->el_line.lastchar, el->el_state.argument, cv__isword);
+		el->el_line.lastchar, el->el_state.argument, cv__isword);
 
 	if (el->el_map.type == MAP_VI)
 		if (el->el_chared.c_vcmd.action != CHARED_NOP) {
@@ -254,7 +254,7 @@ vi_next_word(EditLine *el, wint_t c __attribute__((__unused__)))
  *	[~]
  */
 libedit_private el_action_t
-vi_change_case(EditLine *el, wint_t c)
+vi_change_case(EditLine* el, wint_t c)
 {
 	int i;
 
@@ -286,13 +286,13 @@ vi_change_case(EditLine *el, wint_t c)
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_change_meta(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_change_meta(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	/*
-         * Delete with insert == change: first we delete and then we leave in
-         * insert mode.
-         */
+		 * Delete with insert == change: first we delete and then we leave in
+		 * insert mode.
+		 */
 	return cv_action(el, CHARED_DELETE | CHARED_INSERT);
 }
 
@@ -303,7 +303,7 @@ vi_change_meta(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_insert_at_bol(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_insert_at_bol(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_line.cursor = el->el_line.buffer;
@@ -319,7 +319,7 @@ vi_insert_at_bol(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_replace_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_replace_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor >= el->el_line.lastchar)
@@ -338,7 +338,7 @@ vi_replace_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_replace_mode(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_replace_mode(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_map.current = el->el_map.key;
@@ -354,7 +354,7 @@ vi_replace_mode(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_substitute_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_substitute_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	c_delafter(el, el->el_state.argument);
@@ -369,13 +369,13 @@ vi_substitute_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_substitute_line(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_substitute_line(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	cv_undo(el);
 	cv_yank(el, el->el_line.buffer,
-	    (int)(el->el_line.lastchar - el->el_line.buffer));
-	(void) em_kill_line(el, 0);
+		(int)(el->el_line.lastchar - el->el_line.buffer));
+	(void)em_kill_line(el, 0);
 	el->el_map.current = el->el_map.key;
 	return CC_REFRESH;
 }
@@ -387,13 +387,13 @@ vi_substitute_line(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_change_to_eol(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_change_to_eol(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	cv_undo(el);
 	cv_yank(el, el->el_line.cursor,
-	    (int)(el->el_line.lastchar - el->el_line.cursor));
-	(void) ed_kill_line(el, 0);
+		(int)(el->el_line.lastchar - el->el_line.cursor));
+	(void)ed_kill_line(el, 0);
 	el->el_map.current = el->el_map.key;
 	return CC_REFRESH;
 }
@@ -405,7 +405,7 @@ vi_change_to_eol(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_insert(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_insert(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_map.current = el->el_map.key;
@@ -420,7 +420,7 @@ vi_insert(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_add(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_add(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	int ret;
 
@@ -430,7 +430,8 @@ vi_add(EditLine *el, wint_t c __attribute__((__unused__)))
 		if (el->el_line.cursor > el->el_line.lastchar)
 			el->el_line.cursor = el->el_line.lastchar;
 		ret = CC_CURSOR;
-	} else
+	}
+	else
 		ret = CC_NORM;
 
 	cv_undo(el);
@@ -445,7 +446,7 @@ vi_add(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_add_at_eol(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_add_at_eol(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_map.current = el->el_map.key;
@@ -461,7 +462,7 @@ vi_add_at_eol(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_delete_meta(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_delete_meta(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_action(el, CHARED_DELETE);
@@ -474,14 +475,14 @@ vi_delete_meta(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_end_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_end_big_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor == el->el_line.lastchar)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv__endword(el->el_line.cursor,
-	    el->el_line.lastchar, el->el_state.argument, cv__isWord);
+		el->el_line.lastchar, el->el_state.argument, cv__isWord);
 
 	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		el->el_line.cursor++;
@@ -498,14 +499,14 @@ vi_end_big_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_end_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_end_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor == el->el_line.lastchar)
 		return CC_ERROR;
 
 	el->el_line.cursor = cv__endword(el->el_line.cursor,
-	    el->el_line.lastchar, el->el_state.argument, cv__isword);
+		el->el_line.lastchar, el->el_state.argument, cv__isword);
 
 	if (el->el_chared.c_vcmd.action != CHARED_NOP) {
 		el->el_line.cursor++;
@@ -522,7 +523,7 @@ vi_end_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_undo(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_undo(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	c_undo_t un = el->el_chared.c_undo;
 
@@ -533,7 +534,7 @@ vi_undo(EditLine *el, wint_t c __attribute__((__unused__)))
 	el->el_chared.c_undo.buf = el->el_line.buffer;
 	el->el_chared.c_undo.len = el->el_line.lastchar - el->el_line.buffer;
 	el->el_chared.c_undo.cursor =
-	    (int)(el->el_line.cursor - el->el_line.buffer);
+		(int)(el->el_line.cursor - el->el_line.buffer);
 	el->el_line.limit = un.buf + (el->el_line.limit - el->el_line.buffer);
 	el->el_line.buffer = un.buf;
 	el->el_line.cursor = un.buf + un.cursor;
@@ -549,7 +550,7 @@ vi_undo(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_command_mode(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_command_mode(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	/* [Esc] cancels pending action */
@@ -573,7 +574,7 @@ vi_command_mode(EditLine *el, wint_t c __attribute__((__unused__)))
  *	[0]
  */
 libedit_private el_action_t
-vi_zero(EditLine *el, wint_t c)
+vi_zero(EditLine* el, wint_t c)
 {
 
 	if (el->el_state.doingarg)
@@ -594,7 +595,7 @@ vi_zero(EditLine *el, wint_t c)
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_delete_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_delete_prev_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_line.cursor <= el->el_line.buffer)
@@ -612,14 +613,15 @@ vi_delete_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_list_or_eof(EditLine *el, wint_t c)
+vi_list_or_eof(EditLine* el, wint_t c)
 {
 
 	if (el->el_line.cursor == el->el_line.lastchar) {
 		if (el->el_line.cursor == el->el_line.buffer) {
 			terminal_writec(el, c);	/* then do a EOF */
 			return CC_EOF;
-		} else {
+		}
+		else {
 			/*
 			 * Here we could list completions, but it is an
 			 * error right now
@@ -627,7 +629,8 @@ vi_list_or_eof(EditLine *el, wint_t c)
 			terminal_beep(el);
 			return CC_ERROR;
 		}
-	} else {
+	}
+	else {
 #ifdef notyet
 		re_goto_bottom(el);
 		*el->el_line.lastchar = '\0';	/* just in case */
@@ -649,9 +652,9 @@ vi_list_or_eof(EditLine *el, wint_t c)
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_kill_line_prev(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_kill_line_prev(EditLine* el, wint_t c __attribute__((__unused__)))
 {
-	wchar_t *kp, *cp;
+	wchar_t* kp, * cp;
 
 	cp = el->el_line.buffer;
 	kp = el->el_chared.c_kill.buf;
@@ -670,7 +673,7 @@ vi_kill_line_prev(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_search_prev(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_search_prev(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_search(el, ED_SEARCH_PREV_HISTORY);
@@ -683,7 +686,7 @@ vi_search_prev(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_search_next(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_search_next(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_search(el, ED_SEARCH_NEXT_HISTORY);
@@ -696,7 +699,7 @@ vi_search_next(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_repeat_search_next(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_repeat_search_next(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_search.patlen == 0)
@@ -710,17 +713,17 @@ vi_repeat_search_next(EditLine *el, wint_t c __attribute__((__unused__)))
  *	Vi repeat current search in the opposite search direction
  *	[N]
  */
-/*ARGSUSED*/
+ /*ARGSUSED*/
 libedit_private el_action_t
-vi_repeat_search_prev(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_repeat_search_prev(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	if (el->el_search.patlen == 0)
 		return CC_ERROR;
 	else
 		return (cv_repeat_srch(el,
-		    el->el_search.patdir == ED_SEARCH_PREV_HISTORY ?
-		    ED_SEARCH_NEXT_HISTORY : ED_SEARCH_PREV_HISTORY));
+			el->el_search.patdir == ED_SEARCH_PREV_HISTORY ?
+			ED_SEARCH_NEXT_HISTORY : ED_SEARCH_PREV_HISTORY));
 }
 
 
@@ -730,7 +733,7 @@ vi_repeat_search_prev(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_next_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	return cv_csearch(el, CHAR_FWD, -1, el->el_state.argument, 0);
 }
@@ -742,7 +745,7 @@ vi_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_prev_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	return cv_csearch(el, CHAR_BACK, -1, el->el_state.argument, 0);
 }
@@ -754,7 +757,7 @@ vi_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_to_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_to_next_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	return cv_csearch(el, CHAR_FWD, -1, el->el_state.argument, 1);
 }
@@ -766,7 +769,7 @@ vi_to_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_to_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_to_prev_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	return cv_csearch(el, CHAR_BACK, -1, el->el_state.argument, 1);
 }
@@ -778,7 +781,7 @@ vi_to_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_repeat_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_repeat_next_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_csearch(el, el->el_search.chadir, el->el_search.chacha,
@@ -792,7 +795,7 @@ vi_repeat_next_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_repeat_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_repeat_prev_char(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	el_action_t r;
 	int dir = el->el_search.chadir;
@@ -810,10 +813,10 @@ vi_repeat_prev_char(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_match(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_match(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	const wchar_t match_chars[] = L"()[]{}";
-	wchar_t *cp;
+	wchar_t* cp;
 	size_t delta, i, count;
 	wchar_t o_ch, c_ch;
 
@@ -857,7 +860,7 @@ vi_match(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_undo_line(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_undo_line(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	cv_undo(el);
@@ -871,7 +874,7 @@ vi_undo_line(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_to_column(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_to_column(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_line.cursor = el->el_line.buffer;
@@ -885,11 +888,11 @@ vi_to_column(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_yank_end(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_yank_end(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	cv_yank(el, el->el_line.cursor,
-	    (int)(el->el_line.lastchar - el->el_line.cursor));
+		(int)(el->el_line.lastchar - el->el_line.cursor));
 	return CC_REFRESH;
 }
 
@@ -899,7 +902,7 @@ vi_yank_end(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_yank(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_yank(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	return cv_action(el, CHARED_YANK);
@@ -911,7 +914,7 @@ vi_yank(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_comment_out(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_comment_out(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 
 	el->el_line.cursor = el->el_line.buffer;
@@ -929,10 +932,10 @@ vi_comment_out(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_alias(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_alias(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	char alias_name[3];
-	const char *alias_text;
+	const char* alias_text;
 
 	if (el->el_chared.c_aliasfun == NULL)
 		return CC_ERROR;
@@ -943,7 +946,7 @@ vi_alias(EditLine *el, wint_t c __attribute__((__unused__)))
 		return CC_ERROR;
 
 	alias_text = (*el->el_chared.c_aliasfun)(el->el_chared.c_aliasarg,
-	    alias_name);
+		alias_name);
 	if (alias_text != NULL)
 		el_wpush(el, ct_decode_string(alias_text, &el->el_scratch));
 	return CC_NORM;
@@ -955,24 +958,25 @@ vi_alias(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_to_history_line(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_to_history_line(EditLine* el, wint_t c __attribute__((__unused__)))
 {
 	int sv_event_no = el->el_history.eventno;
 	el_action_t rval;
 
 
 	if (el->el_history.eventno == 0) {
-		 (void) wcsncpy(el->el_history.buf, el->el_line.buffer,
-		     EL_BUFSIZ);
-		 el->el_history.last = el->el_history.buf +
-			 (el->el_line.lastchar - el->el_line.buffer);
+		(void)wcsncpy(el->el_history.buf, el->el_line.buffer,
+			EL_BUFSIZ);
+		el->el_history.last = el->el_history.buf +
+			(el->el_line.lastchar - el->el_line.buffer);
 	}
 
 	/* Lack of a 'count' means oldest, not 1 */
 	if (!el->el_state.doingarg) {
 		el->el_history.eventno = 0x7fffffff;
 		hist_get(el);
-	} else {
+	}
+	else {
 		/* This is brain dead, all the rest of this code counts
 		 * upwards going into the past.  Here we need count in the
 		 * other direction (to match the output of fc -l).
@@ -982,7 +986,7 @@ vi_to_history_line(EditLine *el, wint_t c __attribute__((__unused__)))
 		if (hist_get(el) == CC_ERROR)
 			return CC_ERROR;
 		el->el_history.eventno = 1 + el->el_history.ev.num
-					- el->el_state.argument;
+			- el->el_state.argument;
 		if (el->el_history.eventno < 0) {
 			el->el_history.eventno = sv_event_no;
 			return CC_ERROR;
@@ -994,24 +998,26 @@ vi_to_history_line(EditLine *el, wint_t c __attribute__((__unused__)))
 	return rval;
 }
 
-#if !defined(_WIN32)
 /* vi_histedit():
  *	Vi edit history line with vi
  *	[v]
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_histedit(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_histedit(EditLine* el, wint_t c __attribute__((__unused__)))
 {
+#if defined(_WIN32)
+	return CC_ERROR;
+#else
 	int fd;
 	pid_t pid;
 	ssize_t st;
 	int status;
 	char tempfile[] = "/tmp/histedit.XXXXXXXXXX";
-	char *cp = NULL;
+	char* cp = NULL;
 	size_t len;
-	wchar_t *line = NULL;
-	const char *editor;
+	wchar_t* line = NULL;
+	const char* editor;
 
 	if (el->el_state.doingarg) {
 		if (vi_to_history_line(el, 0) == CC_ERROR)
@@ -1044,7 +1050,7 @@ vi_histedit(EditLine *el, wint_t c __attribute__((__unused__)))
 		goto error;
 	case 0:
 		close(fd);
-		execlp(editor, editor, tempfile, (char *)NULL);
+		execlp(editor, editor, tempfile, (char*)NULL);
 		exit(0);
 		/*NOTREACHED*/
 	default:
@@ -1061,10 +1067,10 @@ vi_histedit(EditLine *el, wint_t c __attribute__((__unused__)))
 		}
 		else
 			len = 0;
-                el->el_line.cursor = el->el_line.buffer;
-                el->el_line.lastchar = el->el_line.buffer + len;
+		el->el_line.cursor = el->el_line.buffer;
+		el->el_line.lastchar = el->el_line.buffer + len;
 		el_free(cp);
-                el_free(line);
+		el_free(line);
 		break;
 	}
 
@@ -1078,8 +1084,8 @@ error:
 	close(fd);
 	unlink(tempfile);
 	return CC_ERROR;
-}
 #endif
+}
 
 /* vi_history_word():
  *	Vi append word from previous input line
@@ -1089,13 +1095,13 @@ error:
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_history_word(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_history_word(EditLine* el, wint_t c __attribute__((__unused__)))
 {
-	const wchar_t *wp = HIST_FIRST(el);
-	const wchar_t *wep, *wsp;
+	const wchar_t* wp = HIST_FIRST(el);
+	const wchar_t* wep, * wsp;
 	int len;
-	wchar_t *cp;
-	const wchar_t *lim;
+	wchar_t* cp;
+	const wchar_t* lim;
 
 	if (wp == NULL)
 		return CC_ERROR;
@@ -1111,7 +1117,7 @@ vi_history_word(EditLine *el, wint_t c __attribute__((__unused__)))
 			wp++;
 		wep = wp;
 	} while ((!el->el_state.doingarg || --el->el_state.argument > 0)
-	    && *wp != 0);
+		&& *wp != 0);
 
 	if (wsp == NULL || (el->el_state.doingarg && el->el_state.argument != 0))
 		return CC_ERROR;
@@ -1139,9 +1145,9 @@ vi_history_word(EditLine *el, wint_t c __attribute__((__unused__)))
  */
 libedit_private el_action_t
 /*ARGSUSED*/
-vi_redo(EditLine *el, wint_t c __attribute__((__unused__)))
+vi_redo(EditLine* el, wint_t c __attribute__((__unused__)))
 {
-	c_redo_t *r = &el->el_chared.c_redo;
+	c_redo_t* r = &el->el_chared.c_redo;
 
 	if (!el->el_state.doingarg && r->count) {
 		el->el_state.doingarg = 1;

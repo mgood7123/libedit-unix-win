@@ -61,6 +61,7 @@ __RCSID("$NetBSD: readline.c,v 1.181 2023/04/25 17:51:32 christos Exp $");
 #include "el.h"
 #include "fcns.h"
 #include "filecomplete.h"
+#include "wintty.h"
 
 #if !defined(SIZE_T_MAX)
 # define SIZE_T_MAX (size_t)(-1)
@@ -356,7 +357,7 @@ rl_initialize(void)
 	 * See if we don't really want to run the editor
 	 */
 #if defined(_WIN32)
-	if (GetConsoleMode(GetStdHandle(rl_outstream == stdin ? STD_INPUT_HANDLE : STD_OUTPUT_HANDLE), &t) != -1 && (t & ENABLE_ECHO_INPUT) == 0)
+	if (win32_tty_get_mode(rl_outstream, &t) != -1 && (t & ENABLE_ECHO_INPUT) == 0)
 #else
 	if (tcgetattr(fileno(rl_instream), &t) != -1 && (t.c_lflag & ECHO) == 0)
 #endif

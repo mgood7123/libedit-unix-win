@@ -91,6 +91,7 @@ extern char* tgetstr(char*, char**);
 
 #include "el.h"
 #include "fcns.h"
+#include "wintty.h"
 
 /*
  * IMPORTANT NOTE: these routines are allowed to look at the current screen
@@ -241,7 +242,9 @@ static void
 terminal_setflags(EditLine *el)
 {
 	EL_FLAGS = 0;
-#if !defined(_WIN32)
+#if defined(_WIN32)
+	EL_FLAGS |= TERM_CAN_TAB;
+#else
 	if (el->el_tty.t_tabs)
 		EL_FLAGS |= (Val(T_pt) && !Val(T_xt)) ? TERM_CAN_TAB : 0;
 #endif
@@ -944,6 +947,20 @@ terminal_get_size(EditLine *el, int *lins, int *cols)
 
 	*cols = Val(T_co);
 	*lins = Val(T_li);
+
+#if defined(_WIN32)
+	{
+		CONSOLE_SCREEN_BUFFER_INFO scr;
+		if (win32_tty_get_screen_info(el->el_infile, &scr) != -1) {
+			if (scr.dwSize.X) {
+				*cols = scr.dwSize.X;
+			}
+			if (scr.dwSize.Y) {
+				*lins = scr.dwSize.Y;
+			}
+		}
+	}
+#endif
 
 #ifdef TIOCGWINSZ
 	{

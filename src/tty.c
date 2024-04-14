@@ -54,6 +54,7 @@ __RCSID("$NetBSD: tty.c,v 1.70 2021/07/14 07:47:23 christos Exp $");
 #include "el.h"
 #include "fcns.h"
 #include "parse.h"
+#include "wintty.h"
 
 typedef struct ttymodes_t {
 	const char *m_name;
@@ -543,8 +544,15 @@ tty_setup(EditLine *el)
 	if (el->el_tty.t_initialized)
 		return -1;
 
-	// we always assume a tty
-#if !defined(_WIN32)
+#if defined(_WIN32)
+	if (!win32_tty_is_tty(el->el_outfile)) {
+#ifdef DEBUG_TTY
+		(void) fprintf(el->el_errfile, "%s: isatty: %s\n", __func__,
+			strerror(errno));
+#endif /* DEBUG_TTY */
+		return -1;
+	}
+#else
 	if (!isatty(el->el_outfd)) {
 #ifdef DEBUG_TTY
 		(void) fprintf(el->el_errfile, "%s: isatty: %s\n", __func__,
@@ -992,7 +1000,6 @@ tty_bind_char(EditLine *el, int force)
 		}
 	}
 }
-
 
 #if !defined(_WIN32)
 static tcflag_t *
