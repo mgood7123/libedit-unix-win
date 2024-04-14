@@ -357,7 +357,7 @@ rl_initialize(void)
 	 * See if we don't really want to run the editor
 	 */
 #if defined(_WIN32)
-	if (win32_tty_get_mode(rl_outstream, &t) != -1 && (t & ENABLE_ECHO_INPUT) == 0)
+	if (win32_tty_get_mode(rl_instream, &t) != -1 && (t & ENABLE_ECHO_INPUT) == 0)
 #else
 	if (tcgetattr(fileno(rl_instream), &t) != -1 && (t.c_lflag & ECHO) == 0)
 #endif
